@@ -20,14 +20,16 @@ export default defineConfig({
     target: 'esnext',
     rollupOptions: {
       output: {
-        manualChunks: {
-          babylon: ['@babylonjs/core', '@babylonjs/loaders', '@babylonjs/gui'],
+        manualChunks(id) {
+          if (id.includes('@babylonjs')) {
+            return 'babylon';
+          }
         },
       },
     },
   },
   server: {
-    host: true,   // ← exposes on LAN so Android Chrome can connect
+    host: true,
     port: 5173,
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
