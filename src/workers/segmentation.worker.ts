@@ -3,12 +3,23 @@
  * HU thresholding → mask blur → face extraction → Laplacian smoothing
  */
 
+export type ScanType = 'abdomen' | 'brain' | 'chest';
+
 export interface SegmentationInput {
   data: Float32Array;
   nx: number;
   ny: number;
   nz: number;
+  scanType?: ScanType;
 }
+
+// ─── HU thresholds per scan type ─────────────────────────────
+// Each tuple is [lo, hi] in Hounsfield Units.
+const HU_RANGES: Record<ScanType, { vessels: [number,number]; tumor: [number,number]; bone: [number,number] }> = {
+  abdomen: { vessels: [150, 400],  tumor: [20,  80],  bone: [400, 4000] },
+  brain:   { vessels: [50,  100],  tumor: [25,  55],  bone: [700, 3000] },
+  chest:   { vessels: [100, 350],  tumor: [-100, 80], bone: [400, 1800] },
+};
 
 export interface MeshResult {
   vertices: Float32Array;
@@ -211,23 +222,24 @@ function smooth(mesh: MeshResult, iterations = 6): MeshResult {
 // ─── Main worker handler ──────────────────────────────────────
 self.onmessage = (e: MessageEvent<SegmentationInput>) => {
   try {
-    const { data, nx, ny, nz } = e.data;
+    const { data, nx, ny, nz, scanType = 'abdomen' } = e.data;
+    const hu = HU_RANGES[scanType];
 
     self.postMessage({ type: 'progress', value: 10, label: 'Downsampling volume…' });
     const ds = downsample(data, nx, ny, nz);
 
     self.postMessage({ type: 'progress', value: 22, label: 'Extracting vessels…' });
-    const vesselMask = buildMask(ds.data, ds.nx, ds.ny, ds.nz, 150, 400);
+    const vesselMask = buildMask(ds.data, ds.nx, ds.ny, ds.nz, hu.vessels[0], hu.vessels[1]);
     const vesselBlur = blur(vesselMask, ds.nx, ds.ny, ds.nz);
     const vessels = smooth(extractSurface(vesselBlur, ds.nx, ds.ny, ds.nz, 0.25), 8);
 
     self.postMessage({ type: 'progress', value: 46, label: 'Extracting tumor…' });
-    const tumorMask = buildMask(ds.data, ds.nx, ds.ny, ds.nz, 20, 80);
+    const tumorMask = buildMask(ds.data, ds.nx, ds.ny, ds.nz, hu.tumor[0], hu.tumor[1]);
     const tumorBlur = blur(tumorMask, ds.nx, ds.ny, ds.nz);
     const tumor = smooth(extractSurface(tumorBlur, ds.nx, ds.ny, ds.nz, 0.25), 8);
 
     self.postMessage({ type: 'progress', value: 70, label: 'Extracting bone…' });
-    const boneMask = buildMask(ds.data, ds.nx, ds.ny, ds.nz, 400, 4000);
+    const boneMask = buildMask(ds.data, ds.nx, ds.ny, ds.nz, hu.bone[0], hu.bone[1]);
     const boneBlur = blur(boneMask, ds.nx, ds.ny, ds.nz);
     const bone = smooth(extractSurface(boneBlur, ds.nx, ds.ny, ds.nz, 0.25), 4);
 

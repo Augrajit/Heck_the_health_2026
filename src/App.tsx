@@ -10,27 +10,34 @@ import { UploadZone } from './components/UploadZone';
 import { parseDicomBuffer, parseDicomSlice, sliceToImageData, extractSlice } from './lib/dicomParser';
 import { generateSyntheticPhantom, phantomSliceToImageData } from './lib/syntheticPhantom';
 import { fetchPubMedArticles, PubMedArticle } from './lib/pubmedApi';
-import type { SegmentationResult } from './workers/segmentation.worker';
+import type { SegmentationResult, ScanType } from './workers/segmentation.worker';
 
 type AppStage = 'upload' | 'processing' | 'viewer';
 interface TissueState { vessels: boolean; tumor: boolean; bone: boolean; }
 
-export default function App() {
-  const [stage, setStage]           = useState<AppStage>('upload');
-  const [progress, setProgress]     = useState(0);
-  const [progressLabel, setProgressLabel] = useState('');
-  const [slicePreview, setSlicePreview]   = useState<ImageData | null>(null);
-  const [sliceLabel, setSliceLabel]       = useState('');
-  const [tissues, setTissues]       = useState<TissueState>({ vessels: true, tumor: true, bone: true });
-  const [clipValue, setClipValue]   = useState(1);
-  const [articles, setArticles]     = useState<PubMedArticle[]>([]);
-  const [pubLoading, setPubLoading] = useState(false);
-  const [meshReady, setMeshReady]   = useState(false);
-  const [errorMsg, setErrorMsg]     = useState('');
-  const [infoMsg, setInfoMsg]       = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const SCAN_TYPES: { value: ScanType; label: string; hint: string }[] = [
+  { value: 'brain',   label: 'Brain',   hint: 'Cerebral vessels, lesions & skull' },
+  { value: 'abdomen', label: 'Abdomen', hint: 'Aorta, organs & soft tissue' },
+  { value: 'chest',   label: 'Chest',   hint: 'Pulmonary vessels, nodules & ribs' },
+];
 
-  const sceneRef  = useRef<SceneHandle>(null);
+export default function App() {
+  const [stage, setStage] = useState<AppStage>('upload');
+  const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState('');
+  const [slicePreview, setSlicePreview] = useState<ImageData | null>(null);
+  const [sliceLabel, setSliceLabel] = useState('');
+  const [tissues, setTissues] = useState<TissueState>({ vessels: true, tumor: true, bone: true });
+  const [clipValue, setClipValue] = useState(1);
+  const [articles, setArticles] = useState<PubMedArticle[]>([]);
+  const [pubLoading, setPubLoading] = useState(false);
+  const [meshReady, setMeshReady] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [infoMsg, setInfoMsg] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [scanType, setScanType] = useState<ScanType>('abdomen');
+
+  const sceneRef = useRef<SceneHandle>(null);
   const workerRef = useRef<Worker | null>(null);
 
   // ── Segmentation pipeline ──────────────────────────────────────
@@ -84,8 +91,8 @@ export default function App() {
       worker.terminate();
     };
 
-    worker.postMessage({ data, nx, ny, nz }, [data.buffer]);
-  }, []);
+    worker.postMessage({ data, nx, ny, nz, scanType }, [data.buffer]);
+  }, [scanType]);
 
   // ── DICOM file(s) upload ──────────────────────────────────────
   const handleFiles = useCallback(async (files: File[]) => {
@@ -172,7 +179,7 @@ export default function App() {
         previewData[i] = (midSlice.pixelData[i] ?? 0) * midSlice.metadata.rescaleSlope + midSlice.metadata.rescaleIntercept;
 
       const winCenter = metadata.modality === 'CT' ? 40 : 128;
-      const winWidth  = metadata.modality === 'CT' ? 400 : 256;
+      const winWidth = metadata.modality === 'CT' ? 400 : 256;
       // Import lazily to avoid circular dependency
       const { sliceToImageData: s2i } = await import('./lib/dicomParser');
       setSlicePreview(s2i(previewData, width, height, winCenter, winWidth));
@@ -230,6 +237,7 @@ export default function App() {
     setMeshReady(false);
     setClipValue(1);
     setTissues({ vessels: true, tumor: true, bone: true });
+    setScanType('abdomen');
     setSidebarOpen(false);
     setErrorMsg('');
     setInfoMsg('');
@@ -302,6 +310,42 @@ export default function App() {
 
             {stage === 'upload' && (
               <>
+                {/* ── Scan type selector ── */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: '100%', maxWidth: 480 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#475569' }}>Scan Type</span>
+                  <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+                    {SCAN_TYPES.map(({ value, label, hint }) => {
+                      const active = scanType === value;
+                      return (
+                        <button
+                          key={value}
+                          id={`scan-type-${value}`}
+                          onClick={() => setScanType(value)}
+                          title={hint}
+                          style={{
+                            flex: 1, display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center',
+                            gap: 4, padding: '10px 6px', borderRadius: 10,
+                            border: active ? '1.5px solid #06b6d4' : '1.5px solid rgba(255,255,255,0.07)',
+                            background: active
+                              ? 'linear-gradient(135deg, rgba(6,182,212,0.18), rgba(124,58,237,0.12))'
+                              : 'rgba(255,255,255,0.03)',
+                            color: active ? '#e2e8f0' : '#475569',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: active ? '0 0 12px rgba(6,182,212,0.2)' : 'none',
+                          }}
+                        >
+                          <span style={{ fontSize: 12, fontWeight: active ? 700 : 400 }}>{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span style={{ fontSize: 11, color: '#334155' }}>
+                    {SCAN_TYPES.find(t => t.value === scanType)?.hint}
+                  </span>
+                </div>
+
                 <div style={{ width: '100%', maxWidth: 480 }}>
                   <UploadZone onFiles={handleFiles} />
                 </div>
