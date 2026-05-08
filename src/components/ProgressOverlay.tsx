@@ -22,7 +22,7 @@ export function ProgressOverlay({ progress, label }: Props) {
       </div>
       <div className="flex items-center gap-2">
         <div className="animate-spin-slow w-3 h-3 rounded-full border border-cyan-400"
-          style={{ borderTopColor: 'transparent', borderColor: '#22d3ee', borderTopColor: 'transparent' as never }} />
+          style={{ borderColor: '#22d3ee', borderTopColor: 'transparent' }} />
         <span className="text-xs" style={{ color: '#475569' }}>Processing on your device — no data is uploaded</span>
       </div>
     </div>

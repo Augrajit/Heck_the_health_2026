@@ -79,17 +79,17 @@ function extractSurface(
               v001 = get(x,y,z+1), v101 = get(x+1,y,z+1),
               v011 = get(x,y+1,z+1), v111 = get(x+1,y+1,z+1);
 
-        let mask = 0;
-        if (v000 >= iso) mask |= 1;
-        if (v100 >= iso) mask |= 2;
-        if (v010 >= iso) mask |= 4;
-        if (v110 >= iso) mask |= 8;
-        if (v001 >= iso) mask |= 16;
-        if (v101 >= iso) mask |= 32;
-        if (v011 >= iso) mask |= 64;
-        if (v111 >= iso) mask |= 128;
+        let cellMask = 0;
+        if (v000 >= iso) cellMask |= 1;
+        if (v100 >= iso) cellMask |= 2;
+        if (v010 >= iso) cellMask |= 4;
+        if (v110 >= iso) cellMask |= 8;
+        if (v001 >= iso) cellMask |= 16;
+        if (v101 >= iso) cellMask |= 32;
+        if (v011 >= iso) cellMask |= 64;
+        if (v111 >= iso) cellMask |= 128;
 
-        if (mask === 0 || mask === 255) continue;
+        if (cellMask === 0 || cellMask === 255) continue;
 
         let vx = 0, vy = 0, vz = 0, count = 0;
         const addEdge = (valA: number, valB: number, px: number, py: number, pz: number, axis: number) => {
@@ -236,11 +236,13 @@ self.onmessage = (e: MessageEvent<SegmentationInput>) => {
     const result: SegmentationResult = { vessels, tumor, bone };
     self.postMessage(
       { type: 'done', result },
-      [
-        vessels.vertices.buffer, vessels.indices.buffer,
-        tumor.vertices.buffer,   tumor.indices.buffer,
-        bone.vertices.buffer,    bone.indices.buffer,
-      ]
+      {
+        transfer: [
+          vessels.vertices.buffer, vessels.indices.buffer,
+          tumor.vertices.buffer,   tumor.indices.buffer,
+          bone.vertices.buffer,    bone.indices.buffer,
+        ],
+      }
     );
   } catch (err) {
     self.postMessage({ type: 'error', message: err instanceof Error ? err.message : String(err) });
