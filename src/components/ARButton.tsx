@@ -30,8 +30,7 @@ export function ARButton({ disabled }: Props) {
         return;
       }
       const session = await (navigator as any).xr.requestSession('immersive-ar', {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'],
+        optionalFeatures: ['hit-test', 'dom-overlay', 'local-floor'],
       });
       // Session started — hand off to the browser's native AR UI
       session.addEventListener('end', () => setStatus(null));
