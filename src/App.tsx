@@ -441,16 +441,18 @@ export default function App() {
               </div>
             )}
 
-            {/* AR button — bottom center, above Android nav bar */}
-            {isViewer && (
-              <div style={{
-                position: 'absolute', bottom: 72, left: '50%', transform: 'translateX(-50%)',
-                zIndex: 10,
-              }}>
-                <ARButton disabled={!meshReady} />
-              </div>
-            )}
+
           </div>
+
+          {/* AR button — direct child of viewer wrapper, above Android nav bar */}
+          {isViewer && (
+            <div style={{
+              position: 'absolute', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 15, pointerEvents: 'auto',
+            }}>
+              <ARButton disabled={!meshReady} />
+            </div>
+          )}
 
           {/* Sidebar backdrop */}
           {isViewer && sidebarOpen && (
