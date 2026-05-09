@@ -278,12 +278,14 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <PrivacyBadge />
           {isViewer && (
             <>
-              <button className="btn-ghost" onClick={() => setSidebarOpen(o => !o)} style={{ padding: '8px 12px' }} aria-label="Controls">⚙</button>
-              <button className="btn-ghost" onClick={handleReset} id="reset-btn" style={{ padding: '8px 12px' }}>↩ New Scan</button>
+              <button className="btn-ghost" onClick={() => setSidebarOpen(o => !o)}
+                style={{ padding: '7px 10px', fontSize: 16 }} aria-label="Controls">⚙</button>
+              <button className="btn-ghost" onClick={handleReset} id="reset-btn"
+                style={{ padding: '7px 10px', fontSize: 12, whiteSpace: 'nowrap' }}>↩ New</button>
             </>
           )}
         </div>
@@ -393,10 +395,12 @@ export default function App() {
           position: isViewer ? 'relative' : 'absolute',
           inset: isViewer ? 'auto' : 0,
           flex: isViewer ? 1 : 'none',
-          width: '100%', height: '100%',
+          width: '100%',
+          height: isViewer ? '100%' : '100%',
+          minHeight: 0,
           visibility: isViewer ? 'visible' : 'hidden',
           pointerEvents: isViewer ? 'auto' : 'none',
-          display: isViewer ? 'flex' : 'block',
+          display: 'flex',
           flexDirection: 'column',
         }}>
           <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>

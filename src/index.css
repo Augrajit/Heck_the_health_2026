@@ -338,7 +338,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 5px 10px;
   background: rgba(16,185,129,0.1);
   border: 1px solid rgba(16,185,129,0.25);
   border-radius: 20px;
@@ -346,6 +346,13 @@ body {
   font-weight: 500;
   color: #6ee7b7;
   font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+/* Hide badge label on small screens — keep shield icon only */
+@media (max-width: 480px) {
+  .privacy-badge .badge-text { display: none; }
+  .privacy-badge { padding: 5px 8px; }
 }
 
 /* ---- Animations ---- */
