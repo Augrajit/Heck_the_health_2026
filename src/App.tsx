@@ -280,14 +280,6 @@ export default function App() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <PrivacyBadge />
-          {isViewer && (
-            <>
-              <button className="btn-ghost" onClick={() => setSidebarOpen(o => !o)}
-                style={{ padding: '7px 10px', fontSize: 16 }} aria-label="Controls">⚙</button>
-              <button className="btn-ghost" onClick={handleReset} id="reset-btn"
-                style={{ padding: '7px 10px', fontSize: 12, whiteSpace: 'nowrap' }}>↩ New</button>
-            </>
-          )}
         </div>
       </header>
 
@@ -428,10 +420,31 @@ export default function App() {
               </div>
             )}
 
-            {/* AR badge — bottom center */}
+            {/* Floating viewer controls — top right */}
             {isViewer && (
               <div style={{
-                position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+                position: 'absolute', top: 10, right: 10, zIndex: 20,
+                display: 'flex', gap: 8,
+              }}>
+                <button
+                  className="btn-ghost"
+                  onClick={() => setSidebarOpen(o => !o)}
+                  aria-label="Controls"
+                  style={{ padding: '8px 12px', fontSize: 18, backdropFilter: 'blur(8px)', background: 'rgba(5,8,16,0.7)' }}
+                >⚙</button>
+                <button
+                  className="btn-ghost"
+                  onClick={handleReset}
+                  id="reset-btn"
+                  style={{ padding: '8px 12px', fontSize: 13, whiteSpace: 'nowrap', backdropFilter: 'blur(8px)', background: 'rgba(5,8,16,0.7)' }}
+                >↩ New Scan</button>
+              </div>
+            )}
+
+            {/* AR button — bottom center, above Android nav bar */}
+            {isViewer && (
+              <div style={{
+                position: 'absolute', bottom: 72, left: '50%', transform: 'translateX(-50%)',
                 zIndex: 10,
               }}>
                 <ARButton disabled={!meshReady} />
